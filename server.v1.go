@@ -147,6 +147,25 @@ func (v1 *ServerV1) serveHTTP(w http.ResponseWriter, r *http.Request) (err error
 		return err
 	}
 
+	go func(e eiot.Transporter) {
+		for {
+			sessionId, ok := <-e.ReceiveTimeout()
+			if ok {
+				socketId := v1.transport.GetSocketID(sessionId)
+				if socketId != nil {
+					for _, namespace := range v1.events {
+						if events, ok := namespace["disconnect"]; ok {
+							if fn, ok := events[*socketId]; ok {
+								fn.Callback("client namespace disconnect.")
+							}
+						}
+					}
+				}
+				return
+			}
+		}
+	}(eioTransport)
+
 	sid, err := v1.transport.Add(eioTransport)
 	if err != nil {
 		return err
