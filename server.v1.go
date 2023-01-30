@@ -153,9 +153,10 @@ func (v1 *ServerV1) serveHTTP(w http.ResponseWriter, r *http.Request) (err error
 			if ok {
 				socketId := v1.transport.GetSocketID(sessionId)
 				if socketId != nil {
-					for _, namespace := range v1.events {
-						if events, ok := namespace[OnDisconnectEvent]; ok {
+					for namespaceId, namespaces := range v1.events {
+						if events, ok := namespaces[OnDisconnectEvent]; ok {
 							if fn, ok := events[*socketId]; ok {
+								v1.tr().Leave(namespaceId, *socketId, socketIDPrefix+socketId.String())
 								fn.Callback("client namespace disconnect.")
 							}
 						}
