@@ -152,7 +152,7 @@ func (v1 *ServerV1) serveHTTP(w http.ResponseWriter, r *http.Request) (err error
 			sessionId, ok := <-e.ReceiveTimeout()
 			if ok {
 				socketId := v1.transport.GetSocketID(sessionId)
-				if socketId != nil {
+				if socketId != nil && !v1.tr().IsDisconnected(*socketId) {
 					for namespaceId, namespaces := range v1.events {
 						if events, ok := namespaces[OnDisconnectEvent]; ok {
 							if fn, ok := events[*socketId]; ok {
