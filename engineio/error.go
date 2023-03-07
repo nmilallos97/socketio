@@ -1,43 +1,30 @@
 package engineio
 
 import (
-	"fmt"
+	"strings"
 
 	erro "github.com/njones/socketio/internal/errors"
 )
 
 const (
-	ErrNoTransport        erro.String = "transport unknown"
-	ErrNoSessionID        erro.String = "session id unknown"
-	ErrNoEIOVersion       erro.String = "eio version unknown"
-	ErrBadHandshakeMethod erro.String = "bad handshake method"
-	ErrBadRequestMethod   erro.String = "bad http request method"
-	ErrURIPath            erro.String = "bad URI path"
-	ErrTransportRun       erro.String = "bad transport run: %w"
-	ErrPayloadEncode      erro.String = "bad payload encode: %w"
+	ErrUnknownTransport         = httpErrStr(erro.HTTPStatusError400 + "unknown transport")
+	ErrUnknownSessionID         = httpErrStr(erro.HTTPStatusError400 + "unknown session id")
+	ErrUnknownEIOVersion        = httpErrStr(erro.HTTPStatusError400 + "unknown engineio version")
+	ErrInvalidRequestHTTPMethod = httpErrStr(erro.HTTPStatusError400 + "invalid request, an unimplemented HTTP method")
+	ErrInvalidURIPath           = httpErrStr(erro.HTTPStatusError400 + "invalid URI path, the prefix is not found")
+	ErrTransportUpgradeFailed   = httpErrStr(erro.HTTPStatusError400 + "failed to upgrade transport")
+
+	EOH erro.State = "End Of Handshake"
+	IOR erro.State = "Is OPTION Request"
 )
 
-const HTTPStatusError400 httpErrorStatus = 400
+type httpErrStr string
 
-var ErrBadUpgrade = httpError{400, "transport upgrade error"}
+func (e httpErrStr) Error() string { return string(e[erro.HTTPStatusErrorLen:]) }
 
-const EOH erro.String = "end of handshake"
-const IOR erro.String = "is OPTION request"
-
-type httpErrorStatus int
-
-func (e httpErrorStatus) Error() string { return fmt.Sprintf("http error: %d", e) }
-
-type httpError struct {
-	status int
-	erro.String
-}
-
-func (e httpError) Error() string { return string(e.String) }
-
-func (e httpError) Is(target error) bool {
-	if te, ok := target.(httpErrorStatus); ok {
-		return int(te) == e.status
+func (e httpErrStr) Is(target error) bool {
+	if prefix, ok := target.(erro.StatusError); ok {
+		return strings.HasPrefix(string(e), string(prefix))
 	}
 	return false
 }

@@ -1,14 +1,42 @@
 package errors
 
+/*
+Common wordings for Errors
+
+State - error as a state
+  - "<type>: <state>"
+
+Noun - A single thing (use present tense)
+  - "unimplemented <type>"
+  - "invalid <type>, the <reason>"
+
+Verb - An action (use past tense)
+  - "unexpected <issue>"               [equality]
+  - "expected <state>, found <issue>"  [equality]
+  - "failed to <action>:: <error>"
+  - "unknown <reason>"
+  - "<type> unsupported, <reason>"
+  - "<type> not found (for <reason> | in <type>)"
+*/
+
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
 )
 
+type StatusError string
+
+func (e StatusError) Error() string { return string(e) }
+
+const HTTPStatusErrorLen = len(HTTPStatusError400)
+const HTTPStatusError400 StatusError = "|400| "
+
+func KV(kv ...interface{}) Struct { return Struct{kv: kv} }
+
 type (
-	HTTPErrorString string
+	State   string
+	StringF string
 
 	String string
 	Struct struct {
@@ -19,19 +47,13 @@ type (
 	}
 )
 
-func (e HTTPErrorString) As(v interface{}) bool {
-	if str, ok := v.(string); ok {
-		return strings.HasPrefix(string(e), str)
-	}
-	return false
+func (e State) Error() string { return string(e) }
+func (e State) KV(kv ...interface{}) Struct {
+	return Struct{e: e, rr: e, kv: kv}
 }
-func (e HTTPErrorString) Error() string               { return string(e) }
-func (e HTTPErrorString) F(v ...interface{}) Struct   { return String(e).F(v...) }
-func (e HTTPErrorString) KV(kv ...interface{}) Struct { return String(e).KV(kv...) }
 
-func (e String) Error() string { return string(e) }
-
-func (e String) F(v ...interface{}) Struct {
+func (e StringF) Error() string { return string(e) }
+func (e StringF) F(v ...interface{}) Struct {
 	var (
 		f  [][]interface{}
 		kv []interface{}
@@ -58,7 +80,11 @@ func (e String) F(v ...interface{}) Struct {
 
 	return Struct{e: e, rr: err, f: f, kv: kv, wrap: errs}
 }
+func (e StringF) KV(kv ...interface{}) Struct {
+	return Struct{e: e, rr: e, kv: kv}
+}
 
+func (e String) Error() string { return string(e) }
 func (e String) KV(kv ...interface{}) Struct {
 	return Struct{e: e, rr: e, kv: kv}
 }
@@ -116,34 +142,4 @@ func fmtKV(kvPairs []interface{}) string {
 	}
 
 	return fmt.Sprintf("\t"+`{"%s"}`, strings.Join(pairs, `","`))
-}
-
-type Inf chan interface{}
-
-type Group struct {
-	inf Inf
-	ctx context.Context
-	fns []func(c Inf) error
-}
-
-func (g *Group) WithContext(ctx context.Context) { g.ctx = ctx }
-func (g *Group) Add(fn func(Inf) error)          { g.fns = append(g.fns, fn) }
-func (g *Group) Out() interface{}                { return <-g.inf }
-
-func (g *Group) Err() error {
-	for _, fn := range g.fns {
-		select {
-		case <-g.ctx.Done():
-			return context.Canceled
-		default:
-			if err := fn(g.inf); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func NewGroup() *Group {
-	return &Group{ctx: context.TODO(), inf: make(Inf, 1)}
 }

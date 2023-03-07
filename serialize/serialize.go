@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math/bits"
 	"strconv"
 )
 
@@ -67,8 +68,8 @@ type (
 
 func Any(v interface{}) *_any                      { return &_any{v} }
 func (x *_any) String() (str string)               { str, _ = x.Serialize(); return }
-func (x *_any) Serialize() (str string, err error) { return "", ErrSerializableBinary }
-func (x *_any) Unserialize(str string) (err error) { return ErrSerializableBinary }
+func (x *_any) Serialize() (str string, err error) { return "", ErrUnsupported }
+func (x *_any) Unserialize(str string) (err error) { return ErrUnsupported }
 func (x *_any) Interface() (v interface{})         { return x.a }
 func (x _anyWrap) Unserialize(string) error        { return nil }
 func (x _anyWrap) String() string                  { return "" }
@@ -81,8 +82,8 @@ type (
 func Binary(v io.Reader) *_binary                     { return &_binary{v} }
 func (x *_binary) Read(p []byte) (n int, err error)   { return x.r.Read(p) }
 func (x *_binary) String() (str string)               { str, _ = x.Serialize(); return }
-func (x *_binary) Serialize() (str string, err error) { return "", ErrSerializableBinary }
-func (x *_binary) Unserialize(str string) (err error) { return ErrSerializableBinary }
+func (x *_binary) Serialize() (str string, err error) { return "", ErrUnsupportedUseRead }
+func (x *_binary) Unserialize(str string) (err error) { return ErrUnsupported }
 func (x *_binary) Interface() (v interface{})         { return x.r }
 func (x _binaryWrap) Unserialize(string) error        { return nil }
 func (x _binaryWrap) String() string                  { return "" }
@@ -128,9 +129,12 @@ func Integer(v int) *_int                          { x := _int(v); return &x }
 func (x *_int) String() (str string)               { str, _ = x.Serialize(); return }
 func (x *_int) Serialize() (str string, err error) { return stringify(x), nil }
 func (x *_int) Unserialize(str string) (err error) {
-	v, err := strconv.ParseInt(str, 10, 64)
+	v, err := strconv.ParseInt(str, 10, bits.UintSize)
+	if err != nil {
+		return err
+	}
 	*x = _int(v)
-	return err
+	return nil
 }
 func (x *_int) Interface() (v interface{})   { return int(*x) }
 func (x _intParam) Unserialize(string) error { return nil }
@@ -174,9 +178,12 @@ func Uinteger(v uint) *_uint                        { x := _uint(v); return &x }
 func (x *_uint) String() (str string)               { str, _ = x.Serialize(); return }
 func (x *_uint) Serialize() (str string, err error) { return stringify(x), nil }
 func (x *_uint) Unserialize(str string) (err error) {
-	v, err := strconv.ParseUint(str, 10, 64)
+	v, err := strconv.ParseUint(str, 10, bits.UintSize)
+	if err != nil {
+		return err
+	}
 	*x = _uint(v)
-	return err
+	return nil
 }
 func (x *_uint) Interface() (v interface{})   { return uint(*x) }
 func (x _uintParam) Unserialize(string) error { return nil }
