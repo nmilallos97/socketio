@@ -9,6 +9,7 @@ import (
 
 	nmem "github.com/njones/socketio/adaptor/transport/memory"
 	eio "github.com/njones/socketio/engineio"
+	eiot "github.com/njones/socketio/engineio/transport"
 	erro "github.com/njones/socketio/internal/errors"
 	siop "github.com/njones/socketio/protocol"
 	siot "github.com/njones/socketio/transport"
