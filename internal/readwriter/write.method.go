@@ -51,7 +51,7 @@ func (wtr *Writer) Copy(src io.Reader) wtrErr {
 		return wtr
 	}
 
-	_, wtr.err = io.Copy(wtr.w, src)
+	_, wtr.err = wtr.w.ReadFrom(src)
 	return onWtrErr{wtr}
 }
 
