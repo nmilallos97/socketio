@@ -94,7 +94,6 @@ func (v4 *serverV4) serveTransport(w http.ResponseWriter, r *http.Request) (tran
 
 			ctx = v4.sessions.WithInterval(ctx, v4.pingInterval)
 			ctx = v4.sessions.WithTimeout(ctx, v4.pingTimeout)
-			ctx = v4.sessions.WithCloseDisconnect(ctx)
 			return transport, ToEOH(t.Write(w, r.WithContext(ctx)))
 		}
 	}
@@ -112,6 +111,7 @@ func (v4 *serverV4) serveTransport(w http.ResponseWriter, r *http.Request) (tran
 	ctx = v4.sessions.WithCancel(ctx)
 	ctx = v4.sessions.WithInterval(ctx, v4.pingInterval)
 	ctx = v4.sessions.WithTimeout(ctx, v4.pingTimeout)
+	ctx = v4.sessions.WithCloseDisconnect(ctx)
 
 	go func() {
 		v4.transportRunError <- upgrade.transport.Run(w, r.WithContext(ctx), append(v4.eto, opts...)...)

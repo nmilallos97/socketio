@@ -101,8 +101,8 @@ func (t *WebsocketTransport) Run(w http.ResponseWriter, r *http.Request, opts ..
 
 func (t *WebsocketTransport) ConnectionClose(code ws.StatusCode, reason string, ctx context.Context) {
 	t.conn.Close(code, reason)
-	if closeFunc, ok := ctx.Value(eios.SessionCloseDisconnectKey).(func()); ok {
-		closeFunc()
+	if close, ok := ctx.Value(eios.SessionCloseDisconnectKey).(func()); ok {
+		close()
 	}
 }
 
