@@ -94,6 +94,7 @@ func (v4 *serverV4) serveTransport(w http.ResponseWriter, r *http.Request) (tran
 
 			ctx = v4.sessions.WithInterval(ctx, v4.pingInterval)
 			ctx = v4.sessions.WithTimeout(ctx, v4.pingTimeout)
+			ctx = v4.sessions.WithCloseDisconnect(ctx)
 			return transport, ToEOH(t.Write(w, r.WithContext(ctx)))
 		}
 	}
